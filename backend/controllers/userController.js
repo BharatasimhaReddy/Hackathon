@@ -71,13 +71,12 @@ exports.placeOrder = async (req, res) => {
 };
 
 
-// GET /api/orders/my
 exports.getUserOrders = async (req, res) => {
   try {
     const orders = await prisma.order.findMany({
       where: { userId: req.user.id },
       include: {
-        orderItems: {
+        items: {                // changed here
           include: { foodItem: true },
         },
         restaurant: true,
