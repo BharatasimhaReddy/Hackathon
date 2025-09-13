@@ -36,18 +36,23 @@ exports.getRestaurantDetails = async (req, res) => {
 
 // POST /api/orders
 exports.placeOrder = async (req, res) => {
-  const { items, restaurantId } = req.body; 
+  const { items, restaurantId, totalPrice } = req.body; 
 
   try {
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Order must include at least one item' });
     }
 
+    if (typeof totalPrice !== 'number') {
+      return res.status(400).json({ message: 'totalPrice must be a number' });
+    }
+
     const order = await prisma.order.create({
       data: {
-        userId: req.user.id,
+        userId: req.user.id,     // assuming you have user auth middleware
         restaurantId,
-        orderItems: {
+        totalPrice,
+        items: {                 // Use the field name in your Prisma model, looks like 'items' not 'orderItems'
           create: items.map(item => ({
             foodItemId: item.foodItemId,
             quantity: item.quantity,
@@ -55,7 +60,7 @@ exports.placeOrder = async (req, res) => {
         },
       },
       include: {
-        orderItems: true,
+        items: true,
       },
     });
 
@@ -64,6 +69,7 @@ exports.placeOrder = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // GET /api/orders/my
 exports.getUserOrders = async (req, res) => {

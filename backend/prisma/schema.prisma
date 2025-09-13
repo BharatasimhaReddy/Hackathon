@@ -1,4 +1,5 @@
 // schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -17,52 +18,64 @@ model User {
   createdAt DateTime @default(now())
 
   // relations
-  restaurants Restaurant[]
-  orders      Order[]
+  orders  Order[]
+  reviews Review[]
 }
 
 enum Role {
-  ADMIN
   USER
+  ADMIN
   RESTAURANT
 }
 
 model Restaurant {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
+  email     String   @unique
+  password  String
   cuisine   String
   location  String
-  image     String? // cover image for restaurant
-  ownerId   String   @db.ObjectId
+  image     String?
   createdAt DateTime @default(now())
 
-  // relations
-  owner User      @relation(fields: [ownerId], references: [id])
-  menu  FoodItem[]
-  orders Order[]
+  menu    FoodItem[]
+  orders  Order[]
+  reviews Review[]
+}
+
+model Review {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String   @db.ObjectId
+  restaurantId String   @db.ObjectId
+  rating       Int
+  comment      String?
+  createdAt    DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
 }
 
 model FoodItem {
-  id          String     @id @default(auto()) @map("_id") @db.ObjectId
-  restaurantId String    @db.ObjectId
-  name        String
-  description String?
-  price       Float
-  image       String   // ✅ required image field
-  available   Boolean  @default(true)
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  restaurantId String  @db.ObjectId
+  name         String
+  description  String?
+  price        Float
+  image        String
+  available    Boolean @default(true)
 
   // relations
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id])
   orderItems OrderItem[]
 }
 
 model Order {
-  id          String     @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String     @db.ObjectId
-  restaurantId String    @db.ObjectId
-  totalPrice  Float
-  status      OrderStatus @default(PENDING)
-  createdAt   DateTime    @default(now())
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String      @db.ObjectId
+  restaurantId String      @db.ObjectId
+  totalPrice   Float
+  status       OrderStatus @default(PENDING)
+  createdAt    DateTime    @default(now())
 
   // relations
   user       User        @relation(fields: [userId], references: [id])
@@ -71,10 +84,10 @@ model Order {
 }
 
 model OrderItem {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  orderId   String   @db.ObjectId
-  foodItemId String  @db.ObjectId
-  quantity  Int
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  orderId    String @db.ObjectId
+  foodItemId String @db.ObjectId
+  quantity   Int
 
   // relations
   order    Order    @relation(fields: [orderId], references: [id])
