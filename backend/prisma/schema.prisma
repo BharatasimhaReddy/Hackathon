@@ -1,0 +1,89 @@
+// schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+
+  // relations
+  restaurants Restaurant[]
+  orders      Order[]
+}
+
+enum Role {
+  ADMIN
+  USER
+  RESTAURANT
+}
+
+model Restaurant {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  cuisine   String
+  location  String
+  image     String? // cover image for restaurant
+  ownerId   String   @db.ObjectId
+  createdAt DateTime @default(now())
+
+  // relations
+  owner User      @relation(fields: [ownerId], references: [id])
+  menu  FoodItem[]
+  orders Order[]
+}
+
+model FoodItem {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  restaurantId String    @db.ObjectId
+  name        String
+  description String?
+  price       Float
+  image       String   // ✅ required image field
+  available   Boolean  @default(true)
+
+  // relations
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  orderItems OrderItem[]
+}
+
+model Order {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String     @db.ObjectId
+  restaurantId String    @db.ObjectId
+  totalPrice  Float
+  status      OrderStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+
+  // relations
+  user       User        @relation(fields: [userId], references: [id])
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id])
+  items      OrderItem[]
+}
+
+model OrderItem {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId   String   @db.ObjectId
+  foodItemId String  @db.ObjectId
+  quantity  Int
+
+  // relations
+  order    Order    @relation(fields: [orderId], references: [id])
+  foodItem FoodItem @relation(fields: [foodItemId], references: [id])
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  OUT_FOR_DELIVERY
+  DELIVERED
+}
